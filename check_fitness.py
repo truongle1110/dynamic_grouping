@@ -254,7 +254,7 @@ def penalty_cost(G_activity):
         group, alpha_i_list = G_alpha[i]
         _, beta_i_list = G_beta[i]
         _, t_i_list = replacement_time[i]
-        # print(f"Replacement time: {t_i_list}, Alpha: {alpha_i_list}, Beta: {beta_i_list}")
+        print(f"Replacement time: {t_i_list}, Alpha: {alpha_i_list}, Beta: {beta_i_list}")
         # Initial guess for t
         initial_guess = [0.0]
         # Perform the minimization

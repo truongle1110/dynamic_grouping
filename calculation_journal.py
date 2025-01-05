@@ -7,36 +7,40 @@ from scipy.optimize import root
 
 S = 15
 cdp = 80
-csysu = 50
-delta1min = 15
+csysu = 60
+delta1min = 10
 delta2min = 2
 
-GENOME_LENGTH = 12                                                      # number of possible group
+GENOME_LENGTH = 18                                                      # number of possible group
 POPULATION_SIZE = 100
 MUTATION_RATE = 0.01
 CROSSOVER_RATE = 0.7
 GENERATIONS = 1500
+p_c_min = 0.6
+p_c_max = 0.9
+p_m_min = 0.01
+p_m_max = 0.1
 
-m = 10                                                                   # Number of repairmen
+m = 3                                                                   # Number of repairmen
 w_max = 7                                                               # Maximum number of iterations for binary search
 
 minimal_cut_sets = [
     {1},
     {2, 3},
-    {2, 4},
-    {3, 4},
-    {5},
-    {6},
-    {7},
-    {8, 10},
-    {9, 10},
-    {11, 12}
+    {4, 7, 16},
+    {4, 8, 16},
+    {5, 6, 7, 16},
+    {5, 6, 8, 16},
+    {9},
+    {10, 11, 12, 17},
+    {13, 14, 18},
+    {13, 15, 18}
 ]
 
 # Load the Excel file
-file_path = 'parameter.xlsx'
+file_path = 'parameter_journal.xlsx'
 all_sheets = pd.read_excel(file_path, sheet_name=None)
-data = all_sheets['data']
+data = all_sheets['data_case1']
 lamda = data['lamda'].to_numpy()
 beta = data['beta'].to_numpy()
 cip = data['cip'].to_numpy()
@@ -59,7 +63,7 @@ def function1(x, Cic, beta, wip, Cip, lamda):
     return np.where(x >= 0, (Cic*(beta-1)* (x**beta)) + (Cic*beta*wip*(x**(beta-1))) - (Cip*(lamda**beta)), np.nan) 
 
 # Initial guess for x
-x0 = np.ones(12)  # Start with all variables initialized to 1
+x0 = np.ones(18)  # Start with all variables initialized to 1
 
 # Perform optimization
 result = root(function1, x0, args=(Cic, beta, wip, Cip, lamda))
@@ -78,7 +82,8 @@ else:
 
 phi_opt = (Cip + Cic*((x_opt/lamda)**beta))/(x_opt+wip)
 print("phi_opt", phi_opt)
-D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
+# D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
+D0i = 0
 ti1 = x_opt - tie + D0i
 print("ti1", np.round(ti1, 2))
 print(np.sum(phi_opt))
@@ -334,8 +339,8 @@ def find_critical_sets_for_groups_P(minimal_cut_sets, groups):
 print("-----------------------------")
 # # Test main
 # genome = random_genome(GENOME_LENGTH)
-genome = [1, 2, 1, 1, 1, 1, 1, 3, 3, 4, 3, 4]
-# genome =[7, 11, 7, 7, 9, 7, 9, 5, 5, 4, 5, 4]
+# genome = [2, 11, 3, 7, 5, 11, 11, 3, 2, 2, 11, 11, 5, 7, 7, 7, 5, 3]
+genome = [2, 11, 3, 7, 5, 11, 11, 3, 2, 2, 11, 11, 5, 7, 7, 7, 5, 3]
 N, G_activity = decode(genome)
 print(f"Genome: {genome}")
 print(f"Activities in each group: {G_activity}")
@@ -551,7 +556,7 @@ def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi
 
 sum_H1_CGks, new_tGk = optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
 print(sum_H1_CGks)
-print(new_tGk)
+print("new_tGk", new_tGk)
 
 profit = UGk - sum_H1_CGks -(CGkd-CnotGkd-CnotGks)
 print(profit)

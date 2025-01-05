@@ -7,36 +7,40 @@ from scipy.optimize import root
 
 S = 15
 cdp = 80
-csysu = 50
-delta1min = 15
+csysu = 60
+delta1min = 10
 delta2min = 2
 
-GENOME_LENGTH = 12                                                      # number of possible group
+GENOME_LENGTH = 18                                                      # number of possible group
 POPULATION_SIZE = 100
 MUTATION_RATE = 0.01
 CROSSOVER_RATE = 0.7
 GENERATIONS = 1500
+p_c_min = 0.6
+p_c_max = 0.9
+p_m_min = 0.01
+p_m_max = 0.1
 
-m = 10                                                                   # Number of repairmen
+m = 3                                                                   # Number of repairmen
 w_max = 7                                                               # Maximum number of iterations for binary search
 
 minimal_cut_sets = [
     {1},
     {2, 3},
-    {2, 4},
-    {3, 4},
-    {5},
-    {6},
-    {7},
-    {8, 10},
-    {9, 10},
-    {11, 12}
+    {4, 7, 16},
+    {4, 8, 16},
+    {5, 6, 7, 16},
+    {5, 6, 8, 16},
+    {9},
+    {10, 11, 12, 17},
+    {13, 14, 18},
+    {13, 15, 18}
 ]
 
 # Load the Excel file
-file_path = 'parameter.xlsx'
+file_path = 'parameter_journal.xlsx'
 all_sheets = pd.read_excel(file_path, sheet_name=None)
-data = all_sheets['data']
+data = all_sheets['data_case1']
 lamda = data['lamda'].to_numpy()
 beta = data['beta'].to_numpy()
 cip = data['cip'].to_numpy()
@@ -59,7 +63,7 @@ def function1(x, Cic, beta, wip, Cip, lamda):
     return np.where(x >= 0, (Cic*(beta-1)* (x**beta)) + (Cic*beta*wip*(x**(beta-1))) - (Cip*(lamda**beta)), np.nan) 
 
 # Initial guess for x
-x0 = np.ones(12)  # Start with all variables initialized to 1
+x0 = np.ones(18)  # Start with all variables initialized to 1
 
 # Perform optimization
 result = root(function1, x0, args=(Cic, beta, wip, Cip, lamda))
@@ -78,7 +82,8 @@ else:
 
 phi_opt = (Cip + Cic*((x_opt/lamda)**beta))/(x_opt+wip)
 print("phi_opt", phi_opt)
-D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
+# D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
+D0i = 0
 ti1 = x_opt - tie + D0i
 print("ti1", np.round(ti1, 2))
 print(np.sum(phi_opt))
@@ -200,16 +205,16 @@ def calculate_d_Gk(G_duration, m, w_max):
     return d_Gk
 
 
-def downtime_cost_critical_group(G_duration, cdp, pii, piGk, wip, m, w_max):
+def downtime_cost_critical_group(G_pii, G_duration, cdp, pii, piGk, wip, m, w_max):
     CnotGkd = []
     DGk = np.array(calculate_d_Gk(G_duration, m, w_max))
-    print("DGk", DGk)
+    # print("DGk", DGk)
     for i in range(len(G_duration)):
         group, dur = G_duration[i]
         _, piiGk = G_pii[i]
         dur = np.array(dur)
         piiGk = np.array(piiGk)
-        print(f"group: {group}, durations: {dur}, pi: {piiGk}")
+        # print(f"group: {group}, durations: {dur}, pi: {piiGk}")
         temp1 = cdp*np.sum(piiGk*dur)                               # CnotGkd for each group
         CnotGkd.append(temp1)
     CGkd = piGk*cdp*DGk
@@ -330,56 +335,6 @@ def find_critical_sets_for_groups_P(minimal_cut_sets, groups):
 
     return critical_groups
 
-
-print("-----------------------------")
-# # Test main
-# genome = random_genome(GENOME_LENGTH)
-genome = [1, 2, 1, 1, 1, 1, 1, 3, 3, 4, 3, 4]
-# genome =[7, 11, 7, 7, 9, 7, 9, 5, 5, 4, 5, 4]
-N, G_activity = decode(genome)
-print(f"Genome: {genome}")
-print(f"Activities in each group: {G_activity}")
-print(f"Number of group: {N}")
-UGk = saveup_cost_saving(G_activity, S)
-print(f"Setup cost saving in each group: {UGk}")
-piGk = calculate_piGk(G_activity, minimal_cut_sets)
-print("piGk", piGk)
-# print(wip)
-
-G_duration = map_others_to_groups(G_activity, wip)
-print(f"Durations in each group: {G_duration}")
-G_pii = map_others_to_groups(G_activity, pii)
-print(f"pii in each group: {G_pii}")
-print("pii", pii)
-
-CnotGkd, CGkd = downtime_cost_critical_group(G_duration, cdp, pii, piGk, wip, m, w_max)
-print("CnotGkd:", CnotGkd)
-print("CGkd:", CGkd)
-
-
-
-G_x_opt = map_others_to_groups(G_activity, x_opt)
-G_ti1 = map_others_to_groups(G_activity, ti1)
-G_Cic = map_others_to_groups(G_activity, Cic)
-G_beta = map_others_to_groups(G_activity, beta)
-G_lamda = map_others_to_groups(G_activity, lamda)
-G_phi_opt = map_others_to_groups(G_activity, phi_opt)
-
-
-H1, tGk = penalty_cost(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt)
-print("H1", H1)
-print("tGk", tGk)
-# print(np.shape(H1))
-# print(np.shape(tGk))
-
-L = find_critical_sets_L(minimal_cut_sets)
-print("L:", L)
-# L_duration = map_others_to_groups(L, wip)
-L_beta = map_others_to_groups(L, beta)
-L_lamda = map_others_to_groups(L, lamda)
-L_tie = map_others_to_groups(L, tie)
-L_ti1 = map_others_to_groups(L, ti1)
-
 def calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity):
     Cis = []
     for i in range(len(L_beta)):
@@ -392,22 +347,22 @@ def calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity):
         lamda_l = np.array(lamda_l)
         tie_l = np.array(tie_l)
 
-        print("group", group)
-        print("dur", dur)
-        print("beta_l", beta_l)
-        print("lamda_l", lamda_l)
-        print("tie_l", tie_l)
+        # print("group", group)
+        # print("dur", dur)
+        # print("beta_l", beta_l)
+        # print("lamda_l", lamda_l)
+        # print("tie_l", tie_l)
 
         a_l = tie_l + ti1[group-1]
-        print("a_l" ,a_l)
+        # print("a_l" ,a_l)
         temp1 = np.sum((((a_l + dur)/lamda_l)**beta_l) - ((a_l/lamda_l)**beta_l))
         temp2 = (1-pii[group-1])*csysu*temp1
-        print("Cis", temp2)
+        # print("Cis", temp2)
         Cis.append(temp2)
     Cis = np.array(Cis)
-    print(Cis)
+    # print(Cis)
     G_CnotGks = map_others_to_groups(G_activity, Cis)
-    print(G_CnotGks)
+    # print(G_CnotGks)
     CnotGks = []
     for j in range(len(G_CnotGks)):
         _, temp3 = G_CnotGks[j]
@@ -416,15 +371,6 @@ def calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity):
         CnotGks.append(temp4)
     CnotGks = np.array(CnotGks)
     return CnotGks
-
-CnotGks = calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity)
-print(CnotGks)
-
-P = find_critical_sets_for_groups_P(minimal_cut_sets, G_activity)
-print("P:",P)
-P_beta = map_others_to_groups(P, beta)
-P_lamda = map_others_to_groups(P, lamda)
-P_tie = map_others_to_groups(P, tie)
 
 
 def calculate_CGks(P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk):
@@ -441,39 +387,20 @@ def calculate_CGks(P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk):
         lamda_p = np.array(lamda_p)
         tie_p = np.array(tie_p)
 
-        print("group", group)
-        print("dur_p", dur_p)
-        print("beta_p", beta_p)
-        print("lamda_p", lamda_p)
-        print("tie_p", tie_p)
-        print("tGk", tGk)
+        # print("group", group)
+        # print("dur_p", dur_p)
+        # print("beta_p", beta_p)
+        # print("lamda_p", lamda_p)
+        # print("tie_p", tie_p)
+        # print("tGk", tGk)
 
         a_p = tie_p + tGk[group-1]
-        print("a_p", a_p)
+        # print("a_p", a_p)
         temp1 = np.sum((((a_p + dur_p)/lamda_p)**beta_p) - ((a_p/lamda_p)**beta_p))
         temp2 = (1-piGk[group-1])*csysu*temp1
         CGks.append(temp2)
     CGks = np.array(CGks)
     return CGks
-
-
-
-CGks = calculate_CGks(P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
-print(CGks)
-
-
-print(f"Setup cost saving in each group: {UGk}")
-print("H1", H1)
-print("CnotGkd:", CnotGkd)
-print("CGkd:", CGkd)
-print("CnotGks", CnotGks)
-print("CGks", CGks)
-EPGk = UGk - (H1+CGks) -(CGkd-CnotGkd-CnotGks)
-print("EPGk", EPGk)
-print("EPGk double check", UGk-H1-(CGkd-CnotGkd)-(CGks-CnotGks))
-EPS = np.sum(EPGk)
-print("EPS", EPS)
-
 
 def small_function_p(t, D, beta, lamda, tie):
     a_p = tie + t
@@ -493,13 +420,13 @@ def sum_of_penalty_cost_and_CGks(t, x_opt_Gk, ti1_Gk, Cic_Gk, beta_Gk, lamda_Gk,
 
 
 # penalty cost
-def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk):
+def optimize_penalty_cost_and_CGks(P, G_duration, G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, piGk):
     sum_H1_CGks = []
     tGk = []
     DGk = np.array(calculate_d_Gk(G_duration, m, w_max))
-    print("DGk", DGk)
+    # print("DGk", DGk)
     P_D = result = [(item[0], [DGk[i]] * len(item[1])) for i, item in enumerate(P)]
-    print("P_D", P_D)
+    # print("P_D", P_D)
     H1_check = []
     CGks_check = []
     for i in range(len(G_x_opt)):
@@ -519,18 +446,18 @@ def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi
         tie_p = np.array(tie_p)
         D_p = np.array(D_p)
         pi_p = piGk[group-1]
-        print(beta_p)
-        print(lamda_p)
-        print(tie_p)
-        print(D_p)
-        print(pi_p)
+        # print(beta_p)
+        # print(lamda_p)
+        # print(tie_p)
+        # print(D_p)
+        # print(pi_p)
         # Initial guess for t
         initial_guess = [0.0]
         # Perform the minimization
         result = minimize(sum_of_penalty_cost_and_CGks, initial_guess, args=(x_opt_Gk, ti1_Gk, Cic_Gk, beta_Gk, lamda_Gk, phi_opt_Gk, D_p, beta_p, lamda_p, tie_p, pi_p))
         # Print the results
-        print("Minimum value of the function: ", np.round(result.fun, decimals=2))
-        print("Value of t at the minimum: ", np.round(result.x, decimals=2))
+        # print("Minimum value of the function: ", np.round(result.fun, decimals=2))
+        # print("Value of t at the minimum: ", np.round(result.x, decimals=2))
         sum_H1_CGks.append(np.round(result.fun, decimals=3))
         tGk.append(np.round(result.x, decimals=3))
 
@@ -539,21 +466,304 @@ def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi
         H1_check.append(np.round(temp5, decimals=3))
         CGks_check.append(np.round(temp6, decimals=3))
 
-    print("H1_check", H1_check)
-    print("CGks_check", CGks_check)
+    # print("H1_check", H1_check)
+    # print("CGks_check", CGks_check)
     sum_H1_CGks = np.array(sum_H1_CGks)
     tGk = np.array(tGk)
     tGk = tGk.reshape(-1)
 
     return sum_H1_CGks, tGk
 
-# optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
+# cost benefit: profit = UGk - sum_H1_CGks -(CGkd-CnotGkd-CnotGks)
+def cost_benefit(UGk, sum_H1_CGks, CGkd, CnotGkd, CnotGks):
+    profit = UGk - sum_H1_CGks -(CGkd-CnotGkd-CnotGks)
+    return profit
 
-sum_H1_CGks, new_tGk = optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
-print(sum_H1_CGks)
-print(new_tGk)
+# fitness function
+def fitness_function(genome):
+    N, G_activity = decode(genome)
+    # print(f"Activities in each group: {G_activity}")
+    UGk = saveup_cost_saving(G_activity, S)
+    # print(f"Setup cost saving in each group: {UGk}")
+    piGk = calculate_piGk(G_activity, minimal_cut_sets)
+    # print("piGk:", piGk)
+    G_duration = map_others_to_groups(G_activity, wip)
+    G_pii = map_others_to_groups(G_activity, pii)
+    CnotGkd, CGkd = downtime_cost_critical_group(G_pii, G_duration, cdp, pii, piGk, wip, m, w_max)
+    # print("CnotGkd:", CnotGkd)
+    # print("CGkd:", CGkd)
+    G_x_opt = map_others_to_groups(G_activity, x_opt)
+    G_ti1 = map_others_to_groups(G_activity, ti1)
+    G_Cic = map_others_to_groups(G_activity, Cic)
+    G_beta = map_others_to_groups(G_activity, beta)
+    G_lamda = map_others_to_groups(G_activity, lamda)
+    G_phi_opt = map_others_to_groups(G_activity, phi_opt)
+    L = find_critical_sets_L(minimal_cut_sets)
+    # print("L:", L)
+    L_beta = map_others_to_groups(L, beta)
+    L_lamda = map_others_to_groups(L, lamda)
+    L_tie = map_others_to_groups(L, tie)
+    L_ti1 = map_others_to_groups(L, ti1)
+    CnotGks = calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity)
+    # print("CnotGks:", CnotGks)
+    P = find_critical_sets_for_groups_P(minimal_cut_sets, G_activity)
+    # print("P:",P)
+    P_beta = map_others_to_groups(P, beta)
+    P_lamda = map_others_to_groups(P, lamda)
+    P_tie = map_others_to_groups(P, tie)
+    sum_H1_CGks, new_tGk = optimize_penalty_cost_and_CGks(P, G_duration, G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, piGk)
+    # print("sum_H1_CGks", sum_H1_CGks)
+    # print("new_tGk", new_tGk)
+
+    profit = cost_benefit(UGk, sum_H1_CGks, CGkd, CnotGkd, CnotGks)
+    fitness = np.sum(profit)
+
+    return fitness
+
+
+
+def linear_ranking_selection(population, fitness_values, num_groups=5):
+    population_size = len(population)
+    # Sort the population based on fitness
+    sorted_population = [x for _, x in sorted(zip(fitness_values, population))]
+    # Determine the size of each group
+    group_size = population_size // num_groups
+    # Assign selection probabilities to each group
+    group_probabilities = [0.05, 0.10, 0.15, 0.25, 0.45]
+    # Ensure that the sum of group probabilities is 1
+    assert sum(group_probabilities) == 1, "Group probabilities must sum to 1"
+    # Initialize list for selected individuals
+    selected = []
+    for _ in range(population_size):
+        # Select a group based on the group probabilities
+        group_index = random.choices(range(num_groups), weights=group_probabilities, k=1)[0]
+        # Determine the start and end indices of the group in the sorted population
+        start_index = group_index * group_size
+        end_index = start_index + group_size
+        # Handle the case where the last group may have fewer members due to integer division
+        if group_index == num_groups - 1:
+            end_index = population_size
+        # Select a random individual from the chosen group
+        selected_individual = random.choice(sorted_population[start_index:end_index])
+        selected.append(selected_individual)
+    return selected
+
+
+def crossover(parent1, parent2, p_c):
+    if random.random() < p_c:
+        point1 = random.randint(1, len(parent1) - 2)
+        point2 = random.randint(point1, len(parent1) - 1)
+        child1 = parent1[:point1] + parent2[point1:point2] + parent1[point2:]
+        child2 = parent2[:point1] + parent1[point1:point2] + parent2[point2:]
+        return child1, child2
+    else:
+        return parent1, parent2
+
+def mutate(genome, p_m):
+    if random.random() < p_m:
+        i, j = random.sample(range(len(genome)), 2)
+        genome[i], genome[j] = genome[j], genome[i]
+    return genome
+
+def genetic_algorithm(genome_length, m, population_size, generations, p_c_min, p_c_max, p_m_min, p_m_max):
+    population = init_population(population_size, genome_length)
+    best_solution = None
+    best_fitness_value = -float('inf')
+    for generation in range(generations):
+        fitness_values = [fitness_function(genome) for genome in population]
+        map_fitness_to_population = sorted(zip(fitness_values, population), reverse=True)
+        # print("map value: ", list(map_fitness_to_population))
+        # Update best solution
+        current_best_fitness = map_fitness_to_population[0][0]
+        current_best_genome = map_fitness_to_population[0][1]
+        
+        if current_best_fitness >= best_fitness_value:
+            best_fitness_value = current_best_fitness
+            best_solution = current_best_genome
+        
+        print(f"Generation {generation} | Best fitness = {best_fitness_value} | Best genome: {best_solution}")
+
+        # Elitism
+        sorted_population = [x for _, x in map_fitness_to_population]
+        new_population = sorted_population[:2]
+   
+        f_avg = np.mean(fitness_values)
+        f_max = np.max(fitness_values)
+
+        # Linear ranking selection and crossover
+        selected = linear_ranking_selection(population, fitness_values)
+      
+        for i in range(2, len(selected), 2):
+            parent1 = selected[i]
+            parent2 = selected[i+1]
+            f_c = max(fitness_function(parent1), fitness_function(parent2))
+            p_c = p_c_max - ((p_c_max - p_c_min) * (f_c - f_avg) / (f_max - f_avg)) if f_c > f_avg else p_c_max
+            child1, child2 = crossover(parent1, parent2, p_c)
+            new_population.extend([child1, child2])
+        # Mutation
+        for i in range(2, len(new_population)):
+            f_m = fitness_function(new_population[i])
+            p_m = p_m_max - ((p_m_max - p_m_min) * (f_max - f_m) / (f_max - f_avg)) if f_m > f_avg else p_m_max
+            new_population[i] = mutate(new_population[i], p_m)
+        
+        population = new_population
+
+    return best_solution, best_fitness_value
+
+
+print("--------------------------------------------------------------------------------")
+
+
+
+# # Test main
+genome = random_genome(GENOME_LENGTH)
+# genome = [1, 2, 1, 1, 1, 1, 1, 3, 3, 4, 3, 4]   #optimal
+# genome = [1, 2, 1, 1, 1, 1, 1, 3, 3, 4, 3, 4]
+
+# fitness = fitness_function(genome)
+# print(fitness)
+
+
+best_individual, best_fitness = genetic_algorithm(GENOME_LENGTH, m, POPULATION_SIZE, GENERATIONS, p_c_min, p_c_max, p_m_min, p_m_max)
+print(f"The best individual is: {best_individual} with fitness: {best_fitness}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+N, G_activity = decode(genome)
+print(f"Genome: {genome}")
+print(f"Activities in each group: {G_activity}")
+# print(f"Number of group: {N}")
+UGk = saveup_cost_saving(G_activity, S)
+print(f"Setup cost saving in each group: {UGk}")
+piGk = calculate_piGk(G_activity, minimal_cut_sets)
+print("piGk:", piGk)
+# print(wip)
+
+G_duration = map_others_to_groups(G_activity, wip)
+print(f"Durations in each group: {G_duration}")
+G_pii = map_others_to_groups(G_activity, pii)
+# print(f"pii in each group: {G_pii}")
+# print("pii", pii)
+
+CnotGkd, CGkd = downtime_cost_critical_group(G_duration, cdp, pii, piGk, wip, m, w_max)
+print("CnotGkd:", CnotGkd)
+print("CGkd:", CGkd)
+
+
+
+G_x_opt = map_others_to_groups(G_activity, x_opt)
+G_ti1 = map_others_to_groups(G_activity, ti1)
+G_Cic = map_others_to_groups(G_activity, Cic)
+G_beta = map_others_to_groups(G_activity, beta)
+G_lamda = map_others_to_groups(G_activity, lamda)
+G_phi_opt = map_others_to_groups(G_activity, phi_opt)
+
+
+# H1, tGk = penalty_cost(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt)
+# print("H1", H1)
+# print("tGk", tGk)
+# print(np.shape(H1))
+# print(np.shape(tGk))
+
+L = find_critical_sets_L(minimal_cut_sets)
+print("L:", L)
+# L_duration = map_others_to_groups(L, wip)
+L_beta = map_others_to_groups(L, beta)
+L_lamda = map_others_to_groups(L, lamda)
+L_tie = map_others_to_groups(L, tie)
+L_ti1 = map_others_to_groups(L, ti1)
+
+
+
+CnotGks = calculate_CnotGks(wip, L_beta, L_lamda, L_tie, ti1, pii, csysu, G_activity)
+print("CnotGks:", CnotGks)
+
+P = find_critical_sets_for_groups_P(minimal_cut_sets, G_activity)
+print("P:",P)
+P_beta = map_others_to_groups(P, beta)
+P_lamda = map_others_to_groups(P, lamda)
+P_tie = map_others_to_groups(P, tie)
+
+# CGks = calculate_CGks(P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
+# print(CGks)
+
+
+# print(f"Setup cost saving in each group: {UGk}")
+# print("H1", H1)
+# print("CnotGkd:", CnotGkd)
+# print("CGkd:", CGkd)
+# print("CnotGks", CnotGks)
+# print("CGks", CGks)
+# EPGk = UGk - (H1+CGks) -(CGkd-CnotGkd-CnotGks)
+# print("EPGk", EPGk)
+# print("EPGk double check", UGk-H1-(CGkd-CnotGkd)-(CGks-CnotGks))
+# EPS = np.sum(EPGk)
+# print("EPS", EPS)
+
+
+sum_H1_CGks, new_tGk = optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, piGk)
+print("sum_H1_CGks", sum_H1_CGks)
+print("new_tGk", new_tGk)
 
 profit = UGk - sum_H1_CGks -(CGkd-CnotGkd-CnotGks)
-print(profit)
+print("profit", profit)
 profit_sum = np.sum(profit)
 print("profit_sum", profit_sum)
+"""
+
