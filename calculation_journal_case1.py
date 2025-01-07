@@ -83,7 +83,8 @@ else:
 phi_opt = (Cip + Cic*((x_opt/lamda)**beta))/(x_opt+wip)
 print("phi_opt", phi_opt)
 # D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
-D0i = 0
+D0i = np.array([0, 3, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 3, 1, 0, 0, 3, 3])
+
 ti1 = x_opt - tie + D0i
 print("ti1", np.round(ti1, 2))
 print(np.sum(phi_opt))
