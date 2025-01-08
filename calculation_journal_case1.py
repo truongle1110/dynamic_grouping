@@ -71,7 +71,7 @@ result = root(function1, x0, args=(Cic, beta, wip, Cip, lamda))
 x_opt = result.x
 if result.success:
     print("Solution found:")
-    print(x_opt)
+    print(np.round(x_opt, 2))
 else:
     print("Solution not found:", result.message)
 # print(Cic)
@@ -83,7 +83,25 @@ else:
 phi_opt = (Cip + Cic*((x_opt/lamda)**beta))/(x_opt+wip)
 print("phi_opt", phi_opt)
 # D0i = np.array([0, 3, 3, 3, 3, 1, 4, 5, 5, 5, 5, 5])
-D0i = np.array([0, 3, 3, 1, 3, 3, 3, 3, 1, 3, 3, 3, 3, 1, 0, 0, 3, 3])
+D0i = np.array([2,
+3,
+3,
+3,
+3,
+3,
+3,
+3,
+0,
+3,
+3,
+3,
+3,
+2,
+2,
+3,
+3,
+3
+])
 
 ti1 = x_opt - tie + D0i
 print("ti1", np.round(ti1, 2))
@@ -337,11 +355,12 @@ def find_critical_sets_for_groups_P(minimal_cut_sets, groups):
     return critical_groups
 
 
+
 print("-----------------------------")
 # # Test main
 # genome = random_genome(GENOME_LENGTH)
 # genome = [2, 11, 3, 7, 5, 11, 11, 3, 2, 2, 11, 11, 5, 7, 7, 7, 5, 3]
-genome = [2, 11, 3, 7, 5, 11, 11, 3, 2, 2, 11, 11, 5, 7, 7, 7, 5, 3]
+genome = [12, 16, 15, 14, 14, 16, 5, 12, 12, 16, 15, 15, 5, 14, 14, 16, 5, 15]
 N, G_activity = decode(genome)
 print(f"Genome: {genome}")
 print(f"Activities in each group: {G_activity}")

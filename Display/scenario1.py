@@ -5,28 +5,28 @@ import numpy as np
 import seaborn as sns
 import plotly.express as px
 
-x_values = [49.88,
+x_values = [169.02,
 196.49,
 290.6,
-92.05,
-673.15,
+179.47,
+183.57,
 228.02,
 281.79,
-427,
-93.7,
-129.65,
+183.97,
+30.35,
+217.26,
 262.36,
-208.41,
-547.34,
-79.56,
-42.37,
-27.81,
-418.38,
+224.87,
+337.34,
+80.56,
+156.72,
+200.84,
+318.38,
 310.93
 ]
 y_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
-t_values = [82.26, 222.86, 312.88, 46.12, 494.49, 222.86, 222.86, 312.88, 82.26, 82.26, 222.86, 222.86, 494.49, 46.12, 46.12, 46.12, 494.49, 312.88]
+t_values = [99.33, 208.05, 249.01, 150.26, 150.26, 208.05, 303.52, 99.33, 99.33, 208.05, 249.01, 249.01, 303.52, 150.26, 150.26, 208.05, 303.52, 249.01]
 
 
 print(y_values)
@@ -39,7 +39,7 @@ plt.xlabel('Time')
 plt.ylabel('Component')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
 # Set limits for the axes
-plt.xlim(0, 680)  # Limit x-axis values between 0 and 700
+plt.xlim(0, 350)  # Limit x-axis values between 0 and 350
 plt.ylim(0, 21)   # Limit y-axis values between 0 and 20
 plt.legend(loc='upper right')
 plt.show() 
