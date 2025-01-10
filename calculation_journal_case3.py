@@ -142,6 +142,8 @@ ti1 = np.array([
 ])
 
 ti1 = ti1 - 135
+
+
 print("x_opt", np.round(x_opt, 2))
 print("tie", np.round(tie, 2))
 print("ti1", np.round(ti1, 2))
@@ -398,7 +400,7 @@ print("-----------------------------")
 # # Test main
 # genome = random_genome(GENOME_LENGTH)
 # genome = [1, 4, 6, 3, 4, 3, 6, 6, 1, 3, 6, 4, 6, 3, 1]
-genome = [1, 13, 10, 13, 13, 13, 10, 10, 1, 1, 10, 10, 10, 13, 13]
+genome = [1, 2, 5, 2, 2, 2, 5, 5, 1, 1, 5, 5, 5, 2, 1]
 # genome =[14, 1, 9, 5, 7, 9, 14, 12, 7, 2, 9, 12, 12, 2, 4]
 N, G_activity = decode(genome)
 print(f"Genome: {genome}")
@@ -600,9 +602,10 @@ def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi
 
         temp5 = wrapper_P_Gk(result.x, x_opt_Gk, ti1_Gk, Cic_Gk, beta_Gk, lamda_Gk, phi_opt_Gk)
         temp6 = wrapper_small_function_p(result.x, D_p, beta_p, lamda_p, tie_p, pi_p)
+        temp7 = wrapper_P_Gk([215], x_opt_Gk, ti1_Gk, Cic_Gk, beta_Gk, lamda_Gk, phi_opt_Gk)
         H1_check.append(np.round(temp5, decimals=3))
         CGks_check.append(np.round(temp6, decimals=3))
-
+        print("temp7", temp7)
     print("H1_check", H1_check)
     print("CGks_check", CGks_check)
     sum_H1_CGks = np.array(sum_H1_CGks)
@@ -614,10 +617,17 @@ def optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi
 # optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
 
 sum_H1_CGks, new_tGk = optimize_penalty_cost_and_CGks(G_x_opt, G_ti1, G_Cic, G_beta, G_lamda, G_phi_opt, P_beta, P_lamda, P_tie, csysu, m, w_max, tGk, piGk)
-print(sum_H1_CGks)
+print("sum_H1_CGks", sum_H1_CGks)
 print("new_tGk", new_tGk)
+print("CnotGks", CnotGks)
+
 
 profit = UGk - sum_H1_CGks -(CGkd-CnotGkd-CnotGks)
 print(profit)
 profit_sum = np.sum(profit)
 print("profit_sum", profit_sum)
+
+
+
+
+
